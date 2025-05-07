@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2Player Obby Game</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+      background-color: #f0f0f0;
+    }
+
+    #score {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      color: black;
+      font-size: 24px;
+      font-weight: bold;
+      background-color: rgba(255, 255, 255, 0.5);
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    #message {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      color: red;
+      font-size: 24px;
+      font-weight: bold;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+</head>
+<body>
+  <div id="score">Σκορ Παίκτη 1: 0 | Σκορ Παίκτη 2: 0</div>
+  <div id="message"></div>
+
+  <script>
+    let player1Score = 0;
+    let player2Score = 0;
+    let message = document.getElementById("message");
+
+    // Δημιουργία σκηνής
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Δημιουργία δαπέδου
+    const groundGeometry = new THREE.PlaneGeometry(100, 100);
+    const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x4caf50 });
+    const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    // Δημιουργία παικτών (2 κουτιά)
+    const playerGeometry = new THREE.BoxGeometry(1, 2, 1);
+    const playerMaterial1 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    const playerMaterial2 = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+
+    const player1 = new THREE.Mesh(playerGeometry, playerMaterial1);
+    player1.position.set(-10, 1, 0);
+    scene.add(player1);
+
+    const player2 = new THREE.Mesh(playerGeometry, playerMaterial2);
+    player2.position.set(-10, 1, 5);
+    scene.add(player2);
+
+    // Δημιουργία εμποδίων
+    const obstacleGeometry = new THREE.BoxGeometry(5, 1, 5);
+    const obstacleMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    const obstacle1 = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+    obstacle1.position.set(10, 0.5, 0);
+    scene.add(obstacle1);
+
+    const obstacle2 = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+    obstacle2.position.set(20, 0.5, 5);
+    scene.add(obstacle2);
+
+    // Ρυθμίσεις κάμερας
+    camera.position.set(0, 10, 20);
+    camera.lookAt(0, 1, 0);
+
+    // Κίνηση παικτών
+    let moveLeft1 = false, moveRight1 = false, moveUp1 = false, moveDown1 = false;
+    let moveLeft2 = false, moveRight2 = false, moveUp2 = false, moveDown2 = false;
+
+    document.addEventListener('keydown', (event) => {
+      // Παίκτης 1 (WASD)
+      if (event.key === 'a') moveLeft1 = true;
+      if (event.key === 'd') moveRight1 = true;
+      if (event.key === 'w') moveUp1 = true;
+      if (event.key === 's') moveDown1 = true;
+
+      // Παίκτης 2 (Βέλη)
+      if (event.key === 'ArrowLeft') moveLeft2 = true;
+      if (event.key === 'ArrowRight') moveRight2 = true;
+      if (event.key === 'ArrowUp') moveUp2 = true;
+      if (event.key === 'ArrowDown') moveDown2 = true;
+    });
+
+    document.addEventListener('keyup', (event) => {
+      // Παίκτης 1 (WASD)
+      if (event.key === 'a') moveLeft1 = false;
+      if (event.key === 'd') moveRight1 = false;
+      if (event.key === 'w') moveUp1 = false;
+      if (event.key === 's') moveDown1 = false;
+
+      // Παίκτης 2 (Βέλη)
+      if (event.key === 'ArrowLeft') moveLeft2 = false;
+      if (event.key === 'ArrowRight') moveRight2 = false;
+      if (event.key === 'ArrowUp') moveUp2 = false;
+      if (event.key === 'ArrowDown') moveDown2 = false;
+    });
+
+    // Κίνηση παικτών
+    function movePlayers() {
+      const speed = 0.2;
+
+      // Παίκτης 1
+      if (moveLeft1) player1.position.x -= speed;
+      if (moveRight1) player1.position.x += speed;
+      if (moveUp1) player1.position.z -= speed;
+      if (moveDown1) player1.position.z += speed;
+
+      // Παίκτης 2
+      if (moveLeft2) player2.position.x -= speed;
+      if (moveRight2) player2.position.x += speed;
+      if (moveUp2) player2.position.z -= speed;
+      if (moveDown2) player2.position.z += speed;
+    }
+
+    // Σύνθετη λογική για έλεγχο εμποδίων
+    function checkCollisions() {
+      const dist1 = player1.position.distanceTo(obstacle1.position);
+      const dist2 = player2.position.distanceTo(obstacle2.position);
+
+      if (dist1 < 3) {
+        player1.position.set(-10, 1, 0); // Επαναφορά του Παίκτη 1
+        message.textContent = "Ο Παίκτης 1 έπεσε σε εμπόδιο!";
+      }
+
+      if (dist2 < 3) {
+        player2.position.set(-10, 1, 5); // Επαναφορά του Παίκτη 2
+        message.textContent = "Ο Παίκτης 2 έπεσε σε εμπόδιο!";
+      }
+    }
+
+    // Κύρια συνάρτηση εμφάνισης
+    function animate() {
+      requestAnimationFrame(animate);
+      movePlayers();
+      checkCollisions();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
